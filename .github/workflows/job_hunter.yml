@@ -1,0 +1,106 @@
+name: AI Fresher Job Hunter
+
+# ──────────────────────────────────────────────────────────────────────────
+# Runs every day at 00:30 UTC = 06:00 AM IST
+# Also supports manual trigger via GitHub Actions UI (workflow_dispatch)
+# ──────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    - cron: "30 0 * * *"   # 06:00 AM IST (UTC+5:30 → 00:30 UTC)
+  workflow_dispatch:        # allow manual runs from GitHub UI
+    inputs:
+      debug_mode:
+        description: "Enable debug logging (set LOG_LEVEL=DEBUG)"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  hunt-jobs:
+    name: Fetch · Filter · Email Daily Jobs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout code ─────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Python 3.11 ────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      # ── 3. Install dependencies ──────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ── 4. Create runtime directories (data/ logs/ are gitignored) ───
+      - name: Create runtime directories
+        run: mkdir -p data logs
+
+      # ── 5. Run the job hunter ────────────────────────────────────────
+      - name: Run AI Job Hunter
+        env:
+          # ── API Keys ─────────────────────────────────────────────────
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+
+          # ── Email ─────────────────────────────────────────────────────
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          MY_EMAIL: ${{ secrets.MY_EMAIL }}
+
+          # ── Telegram (optional) ───────────────────────────────────────
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          # ── Google Sheets (optional) ──────────────────────────────────
+          GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+
+          # ── App Settings ──────────────────────────────────────────────
+          LOG_LEVEL: ${{ github.event.inputs.debug_mode == 'true' && 'DEBUG' || 'INFO' }}
+          MAX_JOBS_PER_SOURCE: "25"
+          MIN_AI_SCORE: "40"
+          TOP_JOBS_IN_EMAIL: "20"
+        run: python main.py
+
+      # ── 6. Upload CSV + logs as artifacts ────────────────────────────
+      - name: Upload job data artifacts
+        if: always()    # upload even if main.py exits with error
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-data-${{ github.run_id }}
+          path: |
+            data/*.csv
+            logs/job_hunter.log
+          retention-days: 30
+          if-no-files-found: warn
+
+      # ── 7. Surface run summary in the Actions UI ─────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## 🤖 AI Fresher Job Hunter — Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Run Date | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Runner | ${{ runner.os }} |" >> $GITHUB_STEP_SUMMARY
+          CSV_COUNT=$(ls data/*.csv 2>/dev/null | wc -l || echo "0")
+          echo "| CSV files generated | ${CSV_COUNT} |" >> $GITHUB_STEP_SUMMARY
+          if [ -f logs/job_hunter.log ]; then
+            LAST_LINE=$(tail -n 1 logs/job_hunter.log)
+            echo "| Last log line | \`${LAST_LINE}\` |" >> $GITHUB_STEP_SUMMARY
+          fi

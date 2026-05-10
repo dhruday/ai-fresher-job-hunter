@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Fresher Job Report — {{ date }}</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                   Oxygen, Ubuntu, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Container ───────────────────────────────────────────────────── */
+    .wrapper {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 36px 32px 28px;
+      text-align: center;
+    }
+    .header-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.12);
+      color: #90cdf4;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      color: #ffffff;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header h1 span { color: #63b3ed; }
+    .header-sub {
+      color: #a0aec0;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .header-date {
+      color: #718096;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* ── Stats Bar ───────────────────────────────────────────────────── */
+    .stats-bar {
+      background: #2d3748;
+      display: flex;
+      justify-content: space-around;
+      padding: 16px 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .stat {
+      text-align: center;
+      color: #fff;
+      min-width: 80px;
+    }
+    .stat-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: #63b3ed;
+      display: block;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* ── Section Headers ─────────────────────────────────────────────── */
+    .section {
+      padding: 28px 32px 8px;
+    }
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #4a5568;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #3182ce;
+      border-radius: 2px;
+    }
+
+    /* ── Job Card ─────────────────────────────────────────────────────── */
+    .job-card {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .job-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 10px 0 0 10px;
+    }
+    .score-high::before  { background: #38a169; }
+    .score-mid::before   { background: #3182ce; }
+    .score-low::before   { background: #e07b39; }
+
+    .job-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .job-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .job-company {
+      font-size: 14px;
+      color: #4a5568;
+      margin-top: 2px;
+    }
+
+    /* Score Badge */
+    .score-badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 8px;
+      min-width: 56px;
+      flex-shrink: 0;
+    }
+    .score-badge .score-num {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .score-badge .score-lbl {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .badge-green  { background: #c6f6d5; color: #276749; }
+    .badge-blue   { background: #bee3f8; color: #2c5282; }
+    .badge-orange { background: #feebc8; color: #92400e; }
+
+    /* Meta row */
+    .job-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .meta-chip {
+      background: #edf2f7;
+      color: #4a5568;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip-source {
+      background: #ebf4ff;
+      color: #2c5282;
+    }
+    .chip-score {
+      background: #f0fff4;
+      color: #276749;
+      font-weight: 600;
+    }
+
+    /* AI Summary */
+    .ai-summary {
+      font-size: 13px;
+      color: #4a5568;
+      margin-bottom: 10px;
+      background: #edf2f7;
+      border-left: 3px solid #3182ce;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      font-style: italic;
+    }
+
+    /* Skill tags */
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 9px;
+      border-radius: 4px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .tag-trend { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+    .tag-missing { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+
+    /* Apply Button */
+    .apply-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #3182ce, #2b6cb0);
+      color: #ffffff !important;
+      padding: 9px 22px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none !important;
+      letter-spacing: 0.2px;
+      box-shadow: 0 2px 6px rgba(49,130,206,.35);
+    }
+
+    /* ── Trends Section ───────────────────────────────────────────────── */
+    .trends-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .trend-pill {
+      background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+      color: #2b6cb0;
+      border: 1px solid #bee3f8;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trend-count {
+      background: #2b6cb0;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    /* ── Skill Match Bar ──────────────────────────────────────────────── */
+    .skill-bar-row {
+      margin-bottom: 14px;
+    }
+    .skill-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #4a5568;
+      margin-bottom: 4px;
+    }
+    .skill-bar-track {
+      background: #e2e8f0;
+      border-radius: 4px;
+      height: 8px;
+      overflow: hidden;
+    }
+    .skill-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #3182ce, #63b3ed);
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    .footer {
+      background: #2d3748;
+      color: #a0aec0;
+      text-align: center;
+      padding: 24px 32px;
+      font-size: 12px;
+      line-height: 1.8;
+    }
+    .footer a { color: #63b3ed; }
+    .footer-logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .footer-logo span { color: #63b3ed; }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .header { padding: 24px 20px 20px; }
+      .section { padding: 20px 16px 8px; }
+      .stats-bar { padding: 12px 16px; }
+      .job-header { flex-direction: column; }
+      .score-badge { align-self: flex-start; }
+      .footer { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── HEADER ──────────────────────────────────────────────────────── -->
+  <div class="header">
+    <div class="header-badge">AI Job Intelligence Report</div>
+    <h1>Fresher Job <span>Digest</span></h1>
+    <div class="header-sub">Personalised for {{ candidate_name }}</div>
+    <div class="header-date">{{ date }} &nbsp;·&nbsp; Powered by GPT-4o-mini</div>
+  </div>
+
+  <!-- ── STATS BAR ───────────────────────────────────────────────────── -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-number">{{ total_jobs }}</span>
+      <span class="stat-label">Jobs Found</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">{{ top_jobs|length }}</span>
+      <span class="stat-label">Top Matches</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">{{ avg_score }}</span>
+      <span class="stat-label">Avg Score</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">{{ sources_count }}</span>
+      <span class="stat-label">Sources</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">{{ fresher_friendly_count }}</span>
+      <span class="stat-label">Fresher Friendly</span>
+    </div>
+  </div>
+
+  <!-- ── TOP JOBS ────────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Top Job Matches</div>
+
+    {% for job in top_jobs %}
+    {% if job.score >= 80 %}{% set card_class = "score-high" %}{% set badge_class = "badge-green" %}
+    {% elif job.score >= 60 %}{% set card_class = "score-mid" %}{% set badge_class = "badge-blue" %}
+    {% else %}{% set card_class = "score-low" %}{% set badge_class = "badge-orange" %}
+    {% endif %}
+
+    <div class="job-card {{ card_class }}">
+      <div class="job-header">
+        <div>
+          <div class="job-title">{{ job.title }}</div>
+          <div class="job-company">🏢 {{ job.company }}</div>
+        </div>
+        <div class="score-badge {{ badge_class }}">
+          <span class="score-num">{{ job.score }}</span>
+          <span class="score-lbl">score</span>
+        </div>
+      </div>
+
+      <div class="job-meta">
+        {% if job.location %}
+        <span class="meta-chip">📍 {{ job.location }}</span>
+        {% endif %}
+        {% if job.salary and job.salary != 'Not specified' %}
+        <span class="meta-chip">💰 {{ job.salary }}</span>
+        {% endif %}
+        {% if job.job_type %}
+        <span class="meta-chip">⏱ {{ job.job_type }}</span>
+        {% endif %}
+        {% if job.posted_date %}
+        <span class="meta-chip">📅 {{ job.posted_date }}</span>
+        {% endif %}
+        <span class="meta-chip chip-source">
+          {% if job.source == 'google_jobs' %}🔍 Google Jobs
+          {% elif job.source == 'jsearch' %}💼 JSearch
+          {% elif job.source == 'linkedin' %}🔗 LinkedIn
+          {% else %}📋 {{ job.source }}
+          {% endif %}
+        </span>
+        <span class="meta-chip chip-score">🤖 {{ job.skill_match_pct }}% skill match</span>
+        {% if job.fresher_friendly %}
+        <span class="meta-chip" style="background:#f0fff4;color:#276749;">✅ Fresher Friendly</span>
+        {% endif %}
+      </div>
+
+      {% if job.ai_summary %}
+      <div class="ai-summary">{{ job.ai_summary }}</div>
+      {% endif %}
+
+      {% if job.hiring_trend_tags %}
+      <div class="tags-row">
+        {% for tag in job.hiring_trend_tags %}
+        <span class="tag tag-trend">{{ tag }}</span>
+        {% endfor %}
+        {% if job.missing_skills %}
+        {% for skill in job.missing_skills[:2] %}
+        <span class="tag tag-missing">Learn: {{ skill }}</span>
+        {% endfor %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if job.url %}
+      <a class="apply-btn" href="{{ job.url }}" target="_blank" rel="noopener noreferrer">
+        Apply Now →
+      </a>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if not top_jobs %}
+    <p style="color:#718096;text-align:center;padding:24px;">
+      No new jobs found today that match your profile. Check back tomorrow!
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- ── HIRING TRENDS ───────────────────────────────────────────────── -->
+  {% if hiring_trends %}
+  <div class="section" style="padding-top:16px;">
+    <div class="section-title">Hiring Trend Tags Today</div>
+    <div class="trends-grid">
+      {% for tag, count in hiring_trends %}
+      <div class="trend-pill">
+        {{ tag }}
+        <span class="trend-count">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── TOP COMPANIES ──────────────────────────────────────────────── -->
+  {% if top_companies %}
+  <div class="section" style="padding-top:16px;">
+    <div class="section-title">Most Active Companies Hiring</div>
+    <div class="trends-grid">
+      {% for company, count in top_companies %}
+      <div class="trend-pill" style="background:linear-gradient(135deg,#faf5ff,#e9d8fd);color:#553c9a;border-color:#d6bcfa;">
+        🏢 {{ company }}
+        <span class="trend-count" style="background:#553c9a;">{{ count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── SKILL MATCH OVERVIEW ────────────────────────────────────────── -->
+  {% if skill_demand %}
+  <div class="section" style="padding-top:16px;">
+    <div class="section-title">In-Demand Skills (from today's jobs)</div>
+    {% for skill, demand_pct in skill_demand %}
+    <div class="skill-bar-row">
+      <div class="skill-bar-label">
+        <span>{{ skill }}</span>
+        <span>{{ demand_pct }}%</span>
+      </div>
+      <div class="skill-bar-track">
+        <div class="skill-bar-fill" style="width: {{ demand_pct }}%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────────── -->
+  <div class="footer">
+    <div class="footer-logo">AI Fresher Job <span>Hunter</span></div>
+    <p>Automatically curated for <strong>{{ candidate_name }}</strong> on {{ date }}</p>
+    <p style="margin-top:6px;">
+      Powered by GPT-4o-mini · SerpAPI · JSearch RapidAPI
+    </p>
+    <p style="margin-top:10px;font-size:11px;color:#718096;">
+      This report is auto-generated. Jobs are filtered by AI and may include errors.
+      Always verify job details before applying.
+      <br/>
+      To update your profile or stop alerts, edit your <code>.env</code> configuration.
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

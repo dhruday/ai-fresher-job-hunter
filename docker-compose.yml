@@ -1,0 +1,53 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────
+# AI Fresher Job Hunter — Docker Compose
+#
+# Usage:
+#   Single run:    docker-compose run --rm job-hunter
+#   Build only:    docker-compose build
+#   View logs:     docker-compose logs job-hunter
+# ──────────────────────────────────────────────────────────────
+
+services:
+  job-hunter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-job-hunter
+    image: ai-fresher-job-hunter:latest
+
+    # Load all env vars from .env file
+    env_file:
+      - .env
+
+    # Override specific variables (optional — uncomment to customise)
+    environment:
+      - LOG_LEVEL=INFO
+      - MAX_JOBS_PER_SOURCE=25
+      - MIN_AI_SCORE=40
+      - TOP_JOBS_IN_EMAIL=20
+
+    # Persistent volumes — survives container restarts
+    volumes:
+      - job_data:/app/data
+      - job_logs:/app/logs
+
+    # Restart policy: "no" because this is a one-shot job (not a server)
+    restart: "no"
+
+    # Resource limits (adjust based on your VPS/machine)
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+
+volumes:
+  job_data:
+    driver: local
+  job_logs:
+    driver: local
