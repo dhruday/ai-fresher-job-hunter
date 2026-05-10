@@ -41,6 +41,7 @@ from config.settings import get_settings
 from services.ai_filter import AIFilter
 from services.deduplicator import Deduplicator
 from services.email_generator import EmailGenerator
+from services.fetch_company_careers import CompanyCareersFetcher
 from services.fetch_google_jobs import GoogleJobsFetcher
 from services.fetch_jsearch_jobs import JSearchFetcher
 from services.fetch_linkedin_posts import LinkedInFetcher
@@ -106,6 +107,7 @@ def fetch_all_sources() -> List[Job]:
     Returns merged list of all raw jobs.
     """
     fetchers = {
+        "Company Careers": CompanyCareersFetcher(),   # PRIMARY — direct career portals
         "Google Jobs": GoogleJobsFetcher(),
         "JSearch": JSearchFetcher(),
         "LinkedIn Posts": LinkedInFetcher(),
@@ -114,7 +116,7 @@ def fetch_all_sources() -> List[Job]:
 
     all_jobs: List[Job] = []
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         future_to_name = {
             executor.submit(fetcher.fetch_all): name
             for name, fetcher in fetchers.items()
