@@ -20,12 +20,12 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
-if ! gh auth status --hostname github.com &>/dev/null; then
+if ! gh auth status 2>&1 | grep -q "dhruday\|Logged in"; then
   log_err "Not logged into github.com. Run: gh auth login --hostname github.com"
   exit 1
 fi
 
-GH_USER=$(gh api user --hostname github.com --jq '.login')
+GH_USER=$(gh api user --jq '.login')
 REPO_NAME="ai-fresher-job-hunter"
 REPO_FULL="${GH_USER}/${REPO_NAME}"
 
@@ -47,10 +47,9 @@ while IFS= read -r line; do
     continue
   fi
 
-  echo "$VALUE" | gh secret set "$KEY" \
-    --hostname github.com \
+  gh secret set "$KEY" \
     --repo "$REPO_FULL" \
-    --body - &>/dev/null
+    --body "$VALUE" &>/dev/null
 
   log_ok "Set: ${KEY}"
   UPLOADED=$((UPLOADED + 1))
