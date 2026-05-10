@@ -242,10 +242,11 @@ def run() -> int:
         len(raw_jobs),
         len(new_jobs),
         len(scored_jobs),
-        "sent" if email_sent else "FAILED",
+        "sent" if email_sent else "FAILED (check Gmail App Password)",
     )
     log.info("=" * 60)
-    return 0 if email_sent else 1
+    # Exit 0 even if email failed — jobs are saved to CSV (email is non-critical)
+    return 0
 
 
 if __name__ == "__main__":
