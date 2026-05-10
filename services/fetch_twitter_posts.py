@@ -1,18 +1,18 @@
 """
-services/fetch_linkedin_posts.py
-─────────────────────────────────
-Fetches EXCLUSIVE LinkedIn POSTS (recruiter & HR activity posts) via SerpAPI
-Google search: site:linkedin.com/posts
+services/fetch_twitter_posts.py
+────────────────────────────────
+Fetches exclusive Twitter/X posts from recruiters & HRs announcing fresher
+job openings — via SerpAPI Google search: site:x.com
 
-WHY POSTS (not job listings):
-  - linkedin.com/jobs/view/ pages are generic job board listings.
-  - linkedin.com/posts/ are direct recruiter/HR posts announcing openings —
-    these are more exclusive, fresher, and harder to find on job boards.
-  - Google indexes these public posts; SerpAPI retrieves them legally.
+WHY TWITTER POSTS:
+  - Recruiters & HRs post job openings on Twitter/X daily
+  - These are highly exclusive — not on job boards, direct from source
+  - No Twitter API key needed — uses existing SERPAPI_KEY via Google indexing
+  - Finds real, actionable leads before they appear on job portals
 
 WHAT WE GET:
-  Actual recruiter posts saying "We are hiring!", "Job opening for freshers",
-  with the real LinkedIn post URL, poster name, and job description snippet.
+  Actual tweets: "We are hiring Java freshers! DM/Apply …"
+  with the real tweet URL, poster handle, and full tweet text.
 """
 
 from __future__ import annotations
@@ -33,26 +33,25 @@ _API_ENDPOINT = "https://serpapi.com/search"
 _SLEEP_BETWEEN_QUERIES = 1.2
 _MAX_RETRIES = 3
 
-# Hiring-intent queries targeting actual LinkedIn posts — not job listing pages
-_LI_POST_QUERIES = [
-    '"hiring" "fresher" "Java" India developer',
-    '"hiring" "fresher" "React" India developer',
-    '"hiring" "fresher" "Python" India developer',
-    '"we are hiring" "fresher" "software engineer" India',
-    '"job opening" "fresher" "full stack" India',
-    '"looking for" "fresher" developer India 2025 OR 2026',
-    '"entry level" "hiring" India developer engineer',
-    '"0-1 year" OR "0-2 years" hiring India developer',
+# Twitter/X recruiter post queries — targeting hiring intent
+_TW_QUERIES = [
+    '"hiring" "fresher" "Java" developer India',
+    '"hiring" "fresher" "React" developer India',
+    '"hiring" "fresher" "Python" developer India',
+    '"we are hiring" "fresher" software engineer India',
+    '"job opening" "fresher" developer India',
+    '"entry level" hiring developer India 2025 OR 2026',
+    '"fresher" "full stack" hiring India',
 ]
 
 
-class LinkedInFetcher:
-    """Fetches exclusive LinkedIn recruiter posts via SerpAPI Google search."""
+class TwitterFetcher:
+    """Fetches exclusive Twitter/X recruiter posts via SerpAPI Google search."""
 
     def __init__(self) -> None:
         settings = get_settings()
         self._api_key = settings.serpapi_key
-        self._max_results = 10  # organic results per query
+        self._max_results = 10
 
     # ── Public API ────────────────────────────────────────────────────────
 
@@ -60,28 +59,29 @@ class LinkedInFetcher:
         all_jobs: List[Job] = []
         seen_urls: set[str] = set()
 
-        for query in _LI_POST_QUERIES:
+        for query in _TW_QUERIES:
             try:
                 jobs = self._fetch_query(query)
                 for job in jobs:
                     if job.url and job.url not in seen_urls:
                         seen_urls.add(job.url)
                         all_jobs.append(job)
-                log.info("[LinkedIn Posts] Query '%s' → %d results", query[:50], len(jobs))
+                log.info("[Twitter] Query '%s' → %d results", query[:50], len(jobs))
             except Exception as exc:
-                log.error("[LinkedIn Posts] Query '%s' failed: %s", query[:50], exc)
+                log.error("[Twitter] Query '%s' failed: %s", query[:50], exc)
             finally:
                 time.sleep(_SLEEP_BETWEEN_QUERIES)
 
-        log.info("[LinkedIn Posts] Total fetched: %d posts", len(all_jobs))
+        log.info("[Twitter] Total fetched: %d posts", len(all_jobs))
         return all_jobs
 
     # ── Private Methods ───────────────────────────────────────────────────
 
     @retry_with_backoff(max_attempts=_MAX_RETRIES, exceptions=(requests.RequestException,))
     def _fetch_query(self, query: str) -> List[Job]:
-        """Search Google for LinkedIn post URLs matching the hiring query."""
-        search_query = f"site:linkedin.com/posts {query}"
+        """Search Google for Twitter/X posts matching the hiring query."""
+        # Search both x.com and twitter.com (Google indexes both)
+        search_query = f"(site:x.com OR site:twitter.com) {query}"
         params = {
             "engine": "google",
             "q": search_query,
@@ -100,56 +100,57 @@ class LinkedInFetcher:
         results = data.get("organic_results", [])
         jobs = []
         for r in results:
-            job = self._parse_post_result(r)
+            job = self._parse_tweet_result(r)
             if job:
                 jobs.append(job)
         return jobs
 
-    def _parse_post_result(self, raw: dict) -> Job | None:
-        """Convert a Google organic result pointing to a LinkedIn post into a Job."""
+    def _parse_tweet_result(self, raw: dict) -> Job | None:
+        """Convert a Google organic result pointing to a tweet into a Job."""
         url = safe_get(raw, "link", default="")
-        if "linkedin.com/posts" not in url:
+        # Only accept actual tweet status URLs (not profile pages, search pages, etc.)
+        if not re.search(r"(x\.com|twitter\.com)/.+/status/\d+", url):
             return None
 
-        # Raw title from Google: "John Doe on LinkedIn: 'We are hiring Java freshers...'"
         raw_title = clean_text(safe_get(raw, "title", default=""))
         snippet = clean_text(safe_get(raw, "snippet", default=""))
 
-        # Extract poster name (before " on LinkedIn")
-        poster = ""
-        poster_match = re.match(r"^(.+?)\s+on\s+LinkedIn", raw_title, re.IGNORECASE)
-        if poster_match:
-            poster = poster_match.group(1).strip()
+        # Twitter organic title format: "@handle: Tweet text... | Twitter" or "Name on Twitter: ..."
+        # Extract the handle
+        handle = ""
+        handle_match = re.match(r"@?(\w+)\s*(?:on Twitter|:)", raw_title, re.IGNORECASE)
+        if handle_match:
+            handle = f"@{handle_match.group(1)}"
 
-        # Extract the actual post content (after the colon in the title)
-        post_text = raw_title
-        colon_match = re.search(r'on LinkedIn[:\s]+["\'\u201c\u2018]?(.+)', raw_title, re.IGNORECASE)
-        if colon_match:
-            post_text = colon_match.group(1).strip().strip('"\'\\u201c\\u201d\\u2018\\u2019')
+        # Extract tweet text
+        tweet_text = raw_title
+        tweet_match = re.search(r'(?:on Twitter|on X)[:\s]+["\'\u201c\u2018]?(.+)', raw_title, re.IGNORECASE)
+        if tweet_match:
+            tweet_text = tweet_match.group(1).strip().strip('"\'\\u201c\\u201d\\u2018\\u2019')
+        # Also use snippet as it usually has richer tweet content
+        full_text = f"{tweet_text} {snippet}".strip()
 
-        # Derive a job title from the post content
-        title = _extract_job_title(post_text, snippet)
+        # Derive a job title from the tweet text
+        title = _extract_job_title(full_text)
         if not title:
-            title = post_text[:80] if post_text else "LinkedIn Job Post"
+            # Use condensed tweet text as title
+            title = tweet_text[:80].rstrip(",. ") if tweet_text else "Twitter Job Post"
 
-        # Company: try to extract from "at <Company>" in post/snippet
-        company = poster  # fallback to poster name (usually recruiter/HR)
-        at_match = re.search(r"\bat\s+([A-Z][^,.\n]{2,40})(?=[,.\n]|$)", post_text + " " + snippet)
+        # Company: try to extract from "at <Company>" in tweet, fall back to handle
+        company = handle
+        at_match = re.search(r"\bat\s+([A-Z][^,.\n]{2,40})(?=[,.\n]|$)", full_text)
         if at_match:
             company = at_match.group(1).strip()
 
-        # Location: look for Indian cities or "India"
-        location = _extract_location(post_text + " " + snippet)
-
-        description = f"{post_text}\n\n{snippet}".strip()
+        location = _extract_location(full_text)
 
         return Job(
             title=title,
             company=clean_text(company),
             location=location,
             url=url,
-            description=truncate_text(description, 800),
-            source="linkedin_posts",
+            description=truncate_text(full_text, 800),
+            source="twitter",
             posted_date="",
             salary=normalise_salary(""),
             job_type="",
@@ -166,9 +167,9 @@ _INDIA_CITIES = re.compile(
 
 _TITLE_PATTERNS = [
     re.compile(r"(java\s+(?:full\s+stack|developer|engineer))", re.IGNORECASE),
-    re.compile(r"(react\s+(?:developer|engineer|js))", re.IGNORECASE),
-    re.compile(r"((?:frontend|front-end|front\s+end)\s+developer)", re.IGNORECASE),
-    re.compile(r"((?:backend|back-end|back\s+end)\s+developer)", re.IGNORECASE),
+    re.compile(r"(react\s+(?:developer|engineer|js\s+developer))", re.IGNORECASE),
+    re.compile(r"((?:frontend|front-end)\s+developer)", re.IGNORECASE),
+    re.compile(r"((?:backend|back-end)\s+developer)", re.IGNORECASE),
     re.compile(r"(full\s+stack\s+developer)", re.IGNORECASE),
     re.compile(r"(software\s+engineer)", re.IGNORECASE),
     re.compile(r"(python\s+developer)", re.IGNORECASE),
@@ -178,10 +179,9 @@ _TITLE_PATTERNS = [
 ]
 
 
-def _extract_job_title(post_text: str, snippet: str) -> str:
-    combined = post_text + " " + snippet
+def _extract_job_title(text: str) -> str:
     for pattern in _TITLE_PATTERNS:
-        m = pattern.search(combined)
+        m = pattern.search(text)
         if m:
             return m.group(1).strip().title()
     return ""
@@ -190,4 +190,3 @@ def _extract_job_title(post_text: str, snippet: str) -> str:
 def _extract_location(text: str) -> str:
     m = _INDIA_CITIES.search(text)
     return m.group(0).strip() if m else "India"
-

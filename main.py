@@ -44,6 +44,7 @@ from services.email_generator import EmailGenerator
 from services.fetch_google_jobs import GoogleJobsFetcher
 from services.fetch_jsearch_jobs import JSearchFetcher
 from services.fetch_linkedin_posts import LinkedInFetcher
+from services.fetch_twitter_posts import TwitterFetcher
 from services.logger import get_logger
 from services.mailer import Mailer
 from services.storage import Storage
@@ -107,12 +108,13 @@ def fetch_all_sources() -> List[Job]:
     fetchers = {
         "Google Jobs": GoogleJobsFetcher(),
         "JSearch": JSearchFetcher(),
-        "LinkedIn": LinkedInFetcher(),
+        "LinkedIn Posts": LinkedInFetcher(),
+        "Twitter Posts": TwitterFetcher(),
     }
 
     all_jobs: List[Job] = []
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         future_to_name = {
             executor.submit(fetcher.fetch_all): name
             for name, fetcher in fetchers.items()
