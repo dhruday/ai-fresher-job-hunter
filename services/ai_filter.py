@@ -1,29 +1,28 @@
 """
 services/ai_filter.py
 ──────────────────────
-Uses OpenAI GPT-4o-mini to score, rank, and enrich job listings.
+Uses Groq (free) or OpenAI GPT-4o-mini to score, rank, and enrich job listings.
+
+PROVIDER PRIORITY:
+  1. Groq  — free tier, 14,400 req/day, llama-3.1-8b-instant, OpenAI-compatible
+  2. OpenAI — fallback if GROQ_API_KEY is not set (requires billing)
 
 STRATEGY:
   1. Pre-filter with regex  → rejects obvious mismatches cheaply
-  2. Batch scoring          → 20 jobs per GPT call (reduces token overhead)
-  3. Structured JSON output → parse reliably, no hallucination-prone text
+  2. Batch scoring          → 20 jobs per call (reduces token overhead)
+  3. Structured JSON output → parse reliably
   4. Reject score < MIN_AI_SCORE after scoring
 
-COST:
-  ~80 jobs / 20 per batch = 4 calls
-  ~800 tokens input + 400 tokens output per call = ~1200 tokens/call
-  4 calls × 1200 tokens × $0.00015/1K tokens ≈ $0.001/day
-  Monthly: ~$0.03 — negligible.
+COST: FREE on Groq (14,400 req/day free tier — ~8 calls/day used)
 """
 
 from __future__ import annotations
 
 import json
-import re
 import time
 from typing import Any, List
 
-from openai import OpenAI, RateLimitError, APIError
+from openai import OpenAI, RateLimitError
 
 from config.settings import ALL_SKILLS, CANDIDATE, get_settings
 from services.logger import get_logger
@@ -51,8 +50,8 @@ SCORING RUBRIC (score 1–100):
 40–49:  Weak match — somewhat related, few skills match, but worth considering
 1–39:   Poor match — reject (irrelevant stack, senior role, wrong location)
 
-RETURN FORMAT (strict JSON array, no markdown):
-[
+RETURN FORMAT (strict JSON object with key "jobs", no markdown):
+{{"jobs": [
   {{
     "index": 0,
     "score": 85,
@@ -61,9 +60,8 @@ RETURN FORMAT (strict JSON array, no markdown):
     "missing_skills": ["Docker", "Kubernetes"],
     "ai_summary": "Great React.js role at a startup, 0-1 yrs experience, Bangalore",
     "hiring_trend_tags": ["React", "Full Stack", "Startup"]
-  }},
-  ...
-]
+  }}
+]}}
 
 Rules:
 - Return EXACTLY one JSON object per job in the input, indexed from 0.
@@ -74,23 +72,36 @@ Rules:
 """
 
 _USER_PROMPT_TEMPLATE = """\
-Evaluate these {count} jobs and return the JSON array:
+Evaluate these {count} jobs and return the JSON object:
 
 {jobs_json}
 """
 
 
+def _build_client(settings) -> tuple[OpenAI, str]:
+    """Prefer Groq (free); fall back to OpenAI. Returns (client, model_name)."""
+    if settings.groq_api_key:
+        log.info("LLM provider: Groq (free) — model: %s", settings.groq_model)
+        return OpenAI(api_key=settings.groq_api_key, base_url=settings.groq_base_url), settings.groq_model
+    if settings.openai_api_key:
+        log.info("LLM provider: OpenAI — model: %s", settings.openai_model)
+        return OpenAI(api_key=settings.openai_api_key), settings.openai_model
+    raise RuntimeError(
+        "No LLM API key found. Set GROQ_API_KEY (free) or OPENAI_API_KEY in .env"
+    )
+
+
 class AIFilter:
-    """Scores and enriches jobs using GPT-4o-mini in efficient batches."""
+    """Scores and enriches jobs using Groq (free) or OpenAI in efficient batches."""
 
     def __init__(self) -> None:
         settings = get_settings()
-        self._client = OpenAI(api_key=settings.openai_api_key)
-        self._model = settings.openai_model
+        self._client, self._model = _build_client(settings)
         self._batch_size = settings.openai_batch_size
         self._max_tokens = settings.openai_max_tokens_per_batch
         self._temperature = settings.openai_temperature
         self._min_score = settings.min_ai_score
+        self._is_groq = bool(settings.groq_api_key)
 
     # ── Public API ────────────────────────────────────────────────────────
 
@@ -153,9 +164,9 @@ class AIFilter:
                     job.ai_summary = "AI scoring unavailable for this job."
                 result.extend(batch)
 
-            # Rate-limit guard: 30 req/minute on free tier
+            # Rate-limit guard — Groq: 6000 tokens/min; 1.5s gap keeps us safe
             if batch_start + self._batch_size < len(jobs):
-                time.sleep(2)
+                time.sleep(1.5 if self._is_groq else 2)
 
         return result
 
@@ -197,8 +208,9 @@ class AIFilter:
                 response_format={"type": "json_object"},
             )
         except RateLimitError:
-            log.warning("OpenAI rate limit hit — waiting 60 seconds")
-            time.sleep(60)
+            wait = 15 if self._is_groq else 60
+            log.warning("Rate limit hit — waiting %d seconds", wait)
+            time.sleep(wait)
             raise  # tenacity will retry
 
         raw_content = response.choices[0].message.content or "{}"

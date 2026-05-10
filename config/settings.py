@@ -25,7 +25,10 @@ class Settings(BaseSettings):
     )
 
     # ── API Keys ──────────────────────────────────────────────────────────
-    openai_api_key: str = Field(..., alias="OPENAI_API_KEY")
+    # Groq is the primary LLM provider (free tier, OpenAI-compatible API)
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
+    # OpenAI kept as optional fallback
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     serpapi_key: str = Field(..., alias="SERPAPI_KEY")
     rapidapi_key: str = Field(..., alias="RAPIDAPI_KEY")
     apify_token: str = Field(default="", alias="APIFY_TOKEN")
@@ -51,10 +54,14 @@ class Settings(BaseSettings):
     min_ai_score: int = Field(default=40, alias="MIN_AI_SCORE")
     top_jobs_in_email: int = Field(default=20, alias="TOP_JOBS_IN_EMAIL")
 
-    # ── OpenAI ────────────────────────────────────────────────────────────
+    # ── LLM Settings (Groq by default, OpenAI as fallback) ──────────────
+    # Groq free models: https://console.groq.com/docs/models
+    groq_model: str = "llama-3.1-8b-instant"   # fast, free, great at JSON
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    # OpenAI fallback model
     openai_model: str = "gpt-4o-mini"
     openai_max_tokens_per_batch: int = 2000
-    openai_batch_size: int = 20          # jobs per GPT call
+    openai_batch_size: int = 20          # jobs per GPT/Groq call
     openai_temperature: float = 0.1      # low variance for scoring tasks
 
 
