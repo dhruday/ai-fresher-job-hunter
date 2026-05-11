@@ -35,14 +35,14 @@ _MAX_RETRIES = 3
 
 # Hiring-intent queries targeting actual LinkedIn posts — not job listing pages
 _LI_POST_QUERIES = [
-    '"hiring" "fresher" "Java" India developer',
-    '"hiring" "fresher" "React" India developer',
-    '"hiring" "fresher" "Python" India developer',
-    '"we are hiring" "fresher" "software engineer" India',
-    '"job opening" "fresher" "full stack" India',
-    '"looking for" "fresher" developer India 2025 OR 2026',
-    '"entry level" "hiring" India developer engineer',
-    '"0-1 year" OR "0-2 years" hiring India developer',
+    '"hiring" "fresher" "Java" (Bangalore OR Bengaluru OR Remote OR India) developer',
+    '"hiring" "fresher" "React" (Bangalore OR Bengaluru OR Remote OR India) developer',
+    '"hiring" "fresher" "Python" (Bangalore OR Bengaluru OR Remote OR India) developer',
+    '"we are hiring" "fresher" "software engineer" (Bangalore OR Bengaluru OR Remote OR India)',
+    '"job opening" "fresher" "full stack" (Bangalore OR Bengaluru OR Remote OR India)',
+    '"looking for" "fresher" developer (Bangalore OR Bengaluru OR India) 2025 OR 2026',
+    '"entry level" "hiring" (Bangalore OR Bengaluru OR India) developer engineer',
+    '"0-1 year" OR "0-2 years" hiring (Bangalore OR Bengaluru OR India) developer',
 ]
 
 

@@ -35,13 +35,13 @@ _MAX_RETRIES = 3
 
 # Twitter/X recruiter post queries — targeting hiring intent
 _TW_QUERIES = [
-    '"hiring" "fresher" "Java" developer India',
-    '"hiring" "fresher" "React" developer India',
-    '"hiring" "fresher" "Python" developer India',
-    '"we are hiring" "fresher" software engineer India',
-    '"job opening" "fresher" developer India',
-    '"entry level" hiring developer India 2025 OR 2026',
-    '"fresher" "full stack" hiring India',
+    '"hiring" "fresher" "Java" developer (Bangalore OR Bengaluru OR Remote OR India)',
+    '"hiring" "fresher" "React" developer (Bangalore OR Bengaluru OR Remote OR India)',
+    '"hiring" "fresher" "Python" developer (Bangalore OR Bengaluru OR Remote OR India)',
+    '"we are hiring" "fresher" software engineer (Bangalore OR Bengaluru OR Remote OR India)',
+    '"job opening" "fresher" developer (Bangalore OR Bengaluru OR Remote OR India)',
+    '"entry level" hiring developer (Bangalore OR Bengaluru OR India) 2025 OR 2026',
+    '"fresher" "full stack" hiring (Bangalore OR Bengaluru OR India)',
 ]
 
 

@@ -130,6 +130,7 @@ _FRESHER_ROLE_TERMS = (
     '(fresher OR "entry level" OR "0-1 year" OR "0-2 years" OR trainee OR graduate OR associate)'
 )
 _TECH_TERMS = "(Java OR Python OR React OR \"full stack\" OR \"software engineer\" OR developer)"
+_LOCATION_PREF = '(Bangalore OR Bengaluru OR Remote OR Hybrid OR India)'
 
 
 class CompanyCareersFetcher:
@@ -171,7 +172,7 @@ class CompanyCareersFetcher:
     def _fetch_group(self, group: dict) -> List[Job]:
         """Build a site: OR query for a company group and fetch results."""
         site_clause = " OR ".join(f"site:{s}" for s in group["sites"])
-        query = f"({site_clause}) {_FRESHER_ROLE_TERMS} {_TECH_TERMS} India"
+        query = f"({site_clause}) {_FRESHER_ROLE_TERMS} {_TECH_TERMS} {_LOCATION_PREF}"
 
         params = {
             "engine": "google",

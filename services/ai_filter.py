@@ -41,14 +41,18 @@ Name: {name}
 Experience: Fresher (0 years)
 Target roles: {target_roles}
 Skills: {skills}
-Preferred locations: India, Remote, Hybrid
+Preferred locations: Bangalore/Bengaluru (FIRST PREFERENCE), Remote, Hybrid, India
 
 SCORING RUBRIC (score 1–100):
-90–100: Perfect match — exact title, all core skills present, fresher/entry-level, India
-70–89:  Good match — close title, most skills present, fresh-friendly
-50–69:  Partial match — related title, some skills overlap, may need learning
+90–100: Perfect match — exact title, all core skills present, fresher/entry-level, Bangalore/Bengaluru
+75–89:  Great match — Bangalore/Bengaluru or Remote, close title, most skills present, fresher-friendly
+60–74:  Good match — other India cities, close title, most skills present, fresher-friendly
+50–59:  Partial match — related title, some skills overlap, may need learning
 40–49:  Weak match — somewhat related, few skills match, but worth considering
 1–39:   Poor match — reject (irrelevant stack, senior role, wrong location)
+
+LOCATION BONUS: Add +8 to the score if the job is in Bangalore or Bengaluru. Add +4 for Remote/Hybrid.
+LOCATION PENALTY: Subtract -5 if the job is strictly outside India.
 
 RETURN FORMAT (strict JSON object with key "jobs", no markdown):
 {{"jobs": [

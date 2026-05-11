@@ -91,7 +91,7 @@ CANDIDATE = {
         "cloud": ["AWS"],
     },
     "experience": "Fresher / 0 years",
-    "preferred_locations": ["India", "Remote", "Hybrid"],
+    "preferred_locations": ["Bangalore", "Bengaluru", "Remote", "Hybrid", "India"],
 }
 
 # Flattened skill list for AI prompts
