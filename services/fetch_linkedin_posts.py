@@ -88,6 +88,7 @@ class LinkedInFetcher:
             "hl": "en",
             "gl": "in",
             "num": self._max_results,
+            "tbs": "qdr:w",        # last 7 days only — no old posts
             "api_key": self._api_key,
         }
         response = requests.get(_API_ENDPOINT, params=params, timeout=20)

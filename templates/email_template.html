@@ -3,8 +3,190 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Fresher Job Report — {{ date }}</title>
-  <style>
+  <title>Fresher Jobs – {{ date }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:Arial,Helvetica,sans-serif;color:#222;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:24px 0;">
+<tr><td align="center">
+<table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden;border:1px solid #e0e4ea;">
+
+  <!-- HEADER -->
+  <tr>
+    <td style="background:#1a56db;padding:28px 32px 22px;">
+      <p style="margin:0;color:#bfdbfe;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;">Daily AI Report</p>
+      <h1 style="margin:6px 0 4px;color:#ffffff;font-size:22px;font-weight:700;">Fresher Job Digest</h1>
+      <p style="margin:0;color:#93c5fd;font-size:13px;">For {{ candidate_name }} &nbsp;·&nbsp; {{ date }}</p>
+    </td>
+  </tr>
+
+  <!-- SUMMARY BAR -->
+  <tr>
+    <td style="background:#1e3a5f;padding:14px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center" style="color:#fff;padding:0 8px;">
+            <span style="display:block;font-size:22px;font-weight:700;color:#60a5fa;">{{ total_jobs }}</span>
+            <span style="font-size:10px;color:#93c5fd;text-transform:uppercase;letter-spacing:0.8px;">Jobs Found</span>
+          </td>
+          <td align="center" style="color:#fff;padding:0 8px;border-left:1px solid #2d5a91;">
+            <span style="display:block;font-size:22px;font-weight:700;color:#60a5fa;">{{ top_jobs|length }}</span>
+            <span style="font-size:10px;color:#93c5fd;text-transform:uppercase;letter-spacing:0.8px;">Top Picks</span>
+          </td>
+          <td align="center" style="color:#fff;padding:0 8px;border-left:1px solid #2d5a91;">
+            <span style="display:block;font-size:22px;font-weight:700;color:#60a5fa;">{{ avg_score }}</span>
+            <span style="font-size:10px;color:#93c5fd;text-transform:uppercase;letter-spacing:0.8px;">Avg Score</span>
+          </td>
+          <td align="center" style="color:#fff;padding:0 8px;border-left:1px solid #2d5a91;">
+            <span style="display:block;font-size:22px;font-weight:700;color:#34d399;">{{ fresher_friendly_count }}</span>
+            <span style="font-size:10px;color:#93c5fd;text-transform:uppercase;letter-spacing:0.8px;">Fresher OK</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- SECTION LABEL -->
+  <tr>
+    <td style="padding:24px 32px 8px;">
+      <p style="margin:0;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.2px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">&#9733; Top Job Matches</p>
+    </td>
+  </tr>
+
+  <!-- JOB CARDS -->
+  {% for job in top_jobs %}
+  {% if job.score >= 80 %}
+    {% set bar_color = "#16a34a" %}{% set score_bg = "#dcfce7" %}{% set score_color = "#15803d" %}
+  {% elif job.score >= 65 %}
+    {% set bar_color = "#1a56db" %}{% set score_bg = "#dbeafe" %}{% set score_color = "#1d4ed8" %}
+  {% else %}
+    {% set bar_color = "#d97706" %}{% set score_bg = "#fef3c7" %}{% set score_color = "#b45309" %}
+  {% endif %}
+  <tr>
+    <td style="padding:6px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;border-left:4px solid {{ bar_color }};">
+
+        <!-- Card Header: Title + Score -->
+        <tr>
+          <td style="padding:16px 16px 8px;background:#fafafa;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding-right:12px;">
+                  <p style="margin:0;font-size:16px;font-weight:700;color:#111827;">{{ job.title }}</p>
+                  <p style="margin:4px 0 0;font-size:13px;color:#4b5563;">&#127970; {{ job.company }}</p>
+                </td>
+                <td align="right" valign="top" style="white-space:nowrap;">
+                  <span style="display:inline-block;background:{{ score_bg }};color:{{ score_color }};font-size:18px;font-weight:800;padding:4px 12px;border-radius:6px;">{{ job.score }}</span>
+                  <p style="margin:2px 0 0;font-size:9px;color:#9ca3af;text-align:center;">AI SCORE</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Meta chips -->
+        <tr>
+          <td style="padding:4px 16px 10px;background:#fafafa;">
+            {% if job.location %}
+            <span style="display:inline-block;background:#f3f4f6;color:#374151;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#128205; {{ job.location }}</span>
+            {% endif %}
+            {% if job.salary and job.salary != 'Not specified' %}
+            <span style="display:inline-block;background:#f3f4f6;color:#374151;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#128176; {{ job.salary }}</span>
+            {% endif %}
+            {% if job.fresher_friendly %}
+            <span style="display:inline-block;background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#10003; Fresher Friendly</span>
+            {% endif %}
+            {% if job.source == 'company_careers' %}
+            <span style="display:inline-block;background:#ede9fe;color:#5b21b6;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#127970; Company Portal</span>
+            {% elif job.source == 'linkedin_posts' %}
+            <span style="display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#128279; LinkedIn Post</span>
+            {% elif job.source == 'twitter' %}
+            <span style="display:inline-block;background:#e0f2fe;color:#0369a1;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">&#128038; Twitter/X</span>
+            {% else %}
+            <span style="display:inline-block;background:#f3f4f6;color:#374151;font-size:11px;padding:3px 10px;border-radius:20px;margin:2px 3px 2px 0;">{{ job.source }}</span>
+            {% endif %}
+          </td>
+        </tr>
+
+        <!-- AI Summary -->
+        {% if job.ai_summary %}
+        <tr>
+          <td style="padding:0 16px 10px;background:#fafafa;">
+            <p style="margin:0;font-size:12px;color:#6b7280;font-style:italic;border-left:3px solid #1a56db;padding-left:10px;line-height:1.5;">{{ job.ai_summary }}</p>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Skill tags -->
+        {% if job.hiring_trend_tags %}
+        <tr>
+          <td style="padding:0 16px 12px;background:#fafafa;">
+            {% for tag in job.hiring_trend_tags %}
+            <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;margin:2px 3px 2px 0;border:1px solid #bfdbfe;">{{ tag }}</span>
+            {% endfor %}
+            {% for skill in job.missing_skills[:2] %}
+            <span style="display:inline-block;background:#fff7ed;color:#c2410c;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;margin:2px 3px 2px 0;border:1px solid #fed7aa;">Learn: {{ skill }}</span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Apply button -->
+        {% if job.url %}
+        <tr>
+          <td style="padding:0 16px 16px;background:#fafafa;">
+            <a href="{{ job.url }}" target="_blank" rel="noopener noreferrer"
+               style="display:inline-block;background:#1a56db;color:#ffffff;font-size:13px;font-weight:600;padding:9px 22px;border-radius:6px;text-decoration:none;">
+              Apply Now &#8594;
+            </a>
+          </td>
+        </tr>
+        {% endif %}
+
+      </table>
+    </td>
+  </tr>
+  <!-- spacer -->
+  <tr><td style="height:4px;"></td></tr>
+  {% endfor %}
+
+  {% if not top_jobs %}
+  <tr>
+    <td style="padding:32px;text-align:center;color:#9ca3af;font-size:14px;">
+      No new jobs found today. Check back tomorrow!
+    </td>
+  </tr>
+  {% endif %}
+
+  <!-- TOP COMPANIES -->
+  {% if top_companies %}
+  <tr>
+    <td style="padding:20px 32px 8px;">
+      <p style="margin:0 0 12px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.2px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">&#127970; Most Active Companies</p>
+      {% for company, count in top_companies %}
+      <span style="display:inline-block;background:#f5f3ff;color:#5b21b6;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;margin:3px 4px 3px 0;border:1px solid #ddd6fe;">{{ company }} &nbsp;<span style="background:#5b21b6;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;">{{ count }}</span></span>
+      {% endfor %}
+    </td>
+  </tr>
+  {% endif %}
+
+  <!-- FOOTER -->
+  <tr>
+    <td style="background:#1e3a5f;padding:20px 32px;margin-top:16px;">
+      <p style="margin:0;color:#93c5fd;font-size:12px;text-align:center;line-height:1.8;">
+        <strong style="color:#fff;">AI Fresher Job Hunter</strong><br/>
+        Auto-generated for {{ candidate_name }} on {{ date }}<br/>
+        <span style="color:#60a5fa;">Sources: Company Portals (30 days) &nbsp;·&nbsp; LinkedIn Posts (7 days) &nbsp;·&nbsp; Twitter/X (7 days)</span><br/>
+        <span style="font-size:11px;color:#6b9ac4;">Jobs are AI-filtered — always verify details before applying.</span>
+      </p>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
     /* ── Reset & Base ─────────────────────────────────────────────────── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {

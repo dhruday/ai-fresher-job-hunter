@@ -180,6 +180,7 @@ class CompanyCareersFetcher:
             "hl": "en",
             "gl": "in",
             "num": self._max_results,
+            "tbs": "qdr:m",        # last 30 days only — no stale listings
             "api_key": self._api_key,
         }
         response = requests.get(_API_ENDPOINT, params=params, timeout=20)
